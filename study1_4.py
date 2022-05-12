@@ -31,9 +31,8 @@ STATION_DIR = os.path.join(CSV_DIR, 'station/')
 ANY_DIR = os.path.join(CSV_DIR, 'any/')
 UNZIP_DIR = os.path.join(TOP_DIR, 'unzip/')
 
-
-
-def main_csv_list(ext, zf, info) -> list:
+###########   META   #############
+def main_meta(ext, zf, info) -> list:
 	zf_n = zf.filename
 	info_n = info.filename
 	#c_1 taple(zipname,ext)
@@ -50,26 +49,26 @@ def main_csv_list(ext, zf, info) -> list:
 	c_8 = info.file_size
 	#c_9'metad'['c_type', 'c_sys', 'c_ver', 'ext_ver', 'reserv', 'f_bits', 'vol', 'inter_sttr', 'ext_attr', 'header_offset', 'CRC', 'comp_size', 'extra']
 	c_9 = [f'c_type:{info.compress_type}, c_sys:{info.create_system}, c_ver:{info.create_version}, ext_ver:{info.extract_version}, reserv:{info.reserved}, f_bits:{info.flag_bits}, vol:{info.volume}, inter_attr:{info.internal_attr}, ext_attr:{info.external_attr}, header_offset:{info.header_offset}, CRC:{info.CRC},comp_size:{info.compress_size}, extra:{info.extra}']
-	
-	csv = readline(ext, zf, info)
-	#c_10 b_str
-	c_10 = csv[0]
-	#c_11 = chara_code
-	c_11 = csv[1] 
-	#c_12 EOL
-	c_12 = csv[2]
-	#c_13 = columns_sum
-	c_13 = csv[3]
-	#c_14 #col_1~ col_name_l
-	c_14 = csv[4]
-	csv_l.append([c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_10, c_11, c_12, c_13] + c_14)
-	#print([c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_10, c_11, c_12, c_13, c_14])
-	print('--------------------')
+	print('main_meta return c_1~c_9')
+	return [c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9]
 
-dg =[]
-for i in range(15):
-	dg.append(f'\{c_{i}\}')
-	print((f'\{c_{i}\}')
+
+###########   MAIN_CSV_LIST   #################
+		###   META   ###
+		###   READLINE   ####
+		###    C15_C16  CSV   ###
+		###    C15_C16  EXCEL DF ###
+
+def main_csv_list(ext, zf, info) -> list:
+	main_list = main_meta(ext, zf, info)
+	csv = readline(ext, zf, info)
+	c1516 = c_15_16(ext, zf, info)
+	main_list.extend(c1516)
+	main_list.extend(csv)
+	print('main_csv_list return c_1~c_16')
+	return main_list
+
+############################################
 
 
 
@@ -104,15 +103,17 @@ def tz_chicaco(zipinfo):
 def name_checker(str):
 	s, ext = name_slpit(str)
 	if 'station' in s.casefold():
-		return (f'{ext}/station')
+		return (f'unzip/{ext}/station')
 	elif 'trip' in s.casefold():
-		return (f'{ext}/trip')
+		return (f'unzip/{ext}/trip')
 	else :
-		return (f'{ext}')
+		return (f'unzip/{ext}')
+
+##################   READLINE   ############
 
 
-#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\decode type "utf-8", "backslashreplace" is b'\x80abc' '\\x80abc'
-後ほど\\検索で場所を拾える
+
+#decode type "utf-8", "backslashreplace" is b'\x80abc' '\\x80abc'#後ほど\\検索で場所を拾える
 def readline(ext, zf, info) -> list:
 	if ext != 'csv':
 		return [None, None, None, None, [0, 0]]
@@ -134,13 +135,10 @@ def readline(ext, zf, info) -> list:
 				c_13 = columns(s)[0]
 				#c_14 col_name_l
 				c_14 = columns(s)[1]
-				return [c_10, c_11, c_12, c_13, c_14]
-
-
-#ext, zf, info = new_list[54]
-#getchara(bytes)
-
-
+				readline_list =  [c_10, c_11, c_12, c_13]
+				readline_list.extend(c_14)
+				print('readline ruturn c_10~c_14')
+				return readline_list
 
 # "utf-8" "ascii"...
 def getchara(bytes):
@@ -162,20 +160,64 @@ def columns(str) -> list:
 	str_l = str.split(',')
 	return [len(str_l), str_l]
 
-"""
-# b'\xe3\x81\x93\xe3' >  [len(str), str_l]
-#def colnum(bytes):
-	try:
-		b_str = bytes.decode(encoding='ascii', errors= 'ignore')
-	except Exception as e:
-		print(e)	
-	else:
-		str = re.sub('[\r\n]+$', '', b_str)
-		str_l = str.split(',')
-		return [len(str_l), str_l]
-"""
-\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
+##############    C15_C16  EXCEL DF ################
+def excel_to_df(ext,zf, info) -> list:
+	zf_n = zf.filename
+	info_n = info.filename
+	c_1 = name_slpit(zf_n)[0]
+	c_2 = name_slpit(info_n)[0]
+	c_3, c_4, c_5 = tz_chicaco(info)
+	c_6 = ext
+	c_7 = name_checker(c_2)
+	c_8 = info.file_size
+	c_9 = [f'c_type:{info.compress_type}, c_sys:{info.create_system}, c_ver:{info.create_version}, ext_ver:{info.extract_version}, reserv:{info.reserved}, f_bits:{info.flag_bits}, vol:{info.volume}, inter_attr:{info.internal_attr}, ext_attr:{info.external_attr}, header_offset:{info.header_offset}, CRC:{info.CRC},comp_size:{info.compress_size}, extra:{info.extra}']
+	toread = io.BytesIO()
+	binary = zf.read(info)
+	toread.write(binary) # pass your `decrypted` string as the argument here
+	toread.seek(0) # reset the pointer
+	df = pd.read_excel(toread)
+	index = [c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8,c_9]
+	c_15 = hdf_l = df.head().to_numpy().tolist()
+	c_16 = tdf_l = df.tail().to_numpy().tolist()
+	index.append(c_15)
+	index.append(c_16)
+	index.extend(['0','0','0'])
+	c_13 = len(df.columns.tolist())
+	index.append(c_13)
+	c_14 = df.columns.tolist()
+	index.extend(c_14)
+	df.to_csv(os.path.join(TOP_DIR,ext,c_2)+".csv", header = True, index = False)
+	return index
+
+
+##############    C15_C16  CSV   ################
+#.rstrip()メソッドは改行文字を削除 eval() クオートを削除
+def c_15_16(ext, zf, info):
+	with zf.open(info, mode='r') as myfile:
+		bytes = myfile.readlines()
+		myfile.close()
+	c_15 = [[byte.decode("ascii", "backslashreplace").rstrip()] for byte in bytes[1:6]]
+	c_16 = [[byte.decode("ascii", "backslashreplace").rstrip()] for byte in bytes[-6:-1]]
+	time.sleep(1)
+	print('c_15_c16 return c_15,c_16')
+	return [c_15 , c_16]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$$$$$$$$$$$$$$$     SETTING   $$$$$$$$$$$$$
 
 def macosx_checker(i, zf, info):
 	if 'MACOSX' in info.filename:
@@ -214,15 +256,6 @@ def ext_type_check(zftaplelist):
 		new_list.append(t)
 	return new_list
 
-
-
-
-
-
-
-
-
-
 #<class 'collections.Counter'> 
 # print(c['a']) == 4 , c.keys() == dict_keys(['a', 'b', 'c']), c.values() == dict_values([4, 1, 2]), c.items() == dict_items([('a', 4), ('b', 1), ('c', 2)])
 def itemcounter(ext_l):
@@ -230,46 +263,9 @@ def itemcounter(ext_l):
 	for ext in list(ext_d) :
 		print(f'拡張子"{ext}"は{ext_d[ext]}item存在します')
 
-#解凍前xlsxをDFへ
-def excel_to_df(ext,zf, info) -> list:
-	#シートの数と名前
-	wb = openpyxl.load_workbook(zf.extract(info))
-	wb_l = wb.worksheets
-	list(range(0,len(wb_l)))
-	index = []
-	for i in list(range(0,len(wb_l))):
-		#全てのシートを読み込むsheet_name=None
-		#空のリストにdf{i}.columns.tolist()を追加
-		exec(f'df{i} = pd.read_excel(zf.extract(info), sheet_name=i)')
-		print(f'df{i}作成、合計{len(wb_l)}個のDF')
-		exec(f'index.append(df{i}.columns.tolist())')
-	return index
 
 
-#修正
-io.BytesIO()で空のバイナリファイルを作りZipFileオブジェクトのreadメソッドでZipInfoの情報でread。バイナリにwrite seek位置を0に戻すseek(0)その後pandasでdf化
-
-def excel_to_df(ext,zf, info) -> list:
-	c_1 = name_slpit(zf_n)[0]
-	c_2 = name_slpit(info_n)[0]
-	c_3, c_4, c_5 = tz_chicaco(info)
-	c_6 = ext
-	c_7 = name_checker(c_2)
-	c_8 = info.file_size
-	c_9 = [f'c_type:{info.compress_type}, c_sys:{info.create_system}, c_ver:{info.create_version}, ext_ver:{info.extract_version}, reserv:{info.reserved}, f_bits:{info.flag_bits}, vol:{info.volume}, inter_attr:{info.internal_attr}, ext_attr:{info.external_attr}, header_offset:{info.header_offset}, CRC:{info.CRC},comp_size:{info.compress_size}, extra:{info.extra}']
-	toread = io.BytesIO()
-	binary = zf.read(info)
-	toread.write(binary) # pass your `decrypted` string as the argument here
-	toread.seek(0) # reset the pointer
-	df = pd.read_excel(toread)
-	c_13 = len(df.columns.tolist())
-	index = [c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8,c_9,'0','0','0', c_13]
-	index.append(df.columns.tolist())
-	return index
-
-
-
-###################################ここまで関数
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ここまで関数
 
 # [zip_path1,zip_path2,...]
 files = glob(os.path.join(ZIP_DIR, '*.zip'))
@@ -322,17 +318,89 @@ print(f'csvの最大カラム数 {maxcol_num}')
 m = 13 + int(maxcol_num)
 print(f' 最大{m}列のデータフレーム')
 
-#xlsx_to_list 
+
+#△△△△△△△△△△△△△△△△△△△△△△△△△△global_meta_list に格納していく
+global_meta_list = []
+
+#zip_check
+#xlsx_to_list & extract
+#main_csv_list
+
 for ext, zf, info in new_list:
 	if ext == 'xlsx' :
-		print(ext)
+		print(f'{ext}file extract unzip/xlsx dir')
 		excel_list = excel_to_df(ext, zf, info)
+		zf.extract(info, path=os.path.join(UNZIP_DIR,ext))
+		global_meta_list.append(excel_list)
 		print(excel_list)
+		print(f'meta_data "xlsx" {(len(global_meta_list))}列格納')
+	if ext == 'zip' :
+		print(f'{ext}file extract unzip/zip dir')
+		zf.extract(info, path=os.path.join(UNZIP_DIR,ext))
+		zip_list = main_meta(ext, zf, info)
+		global_meta_list.append(zip_list)
+		print(f'meta_data "zip" {(len(global_meta_list))}列格納')
+	if ext == 'csv' :
+		main_csv = main_csv_list(ext, zf, info)
+		global_meta_list.append(main_csv)
+		print(f'meta_data "csv" {(len(global_meta_list))}列格納')
+	else :
+		print(f'その他の拡張子{ext, zf, info}があります')
+
+print(f'global_meta_list{(len(global_meta_list))}列')
+
+#メタデータ出力,最大列数に揃えてDF化#skipinitialspace=Trueコンマ後の空白除去
+
+df = pd.DataFrame(global_meta_list,).dropna(how='all').reset_index(drop=True).fillna('')
+
+c_name = ['zipfile','name', 'unix_time', 'America/Chicago', 'UTC','extension','dir_path', 'bytes', 'metad', 'head5', 'tail5', 'b_str', 'chara_code', 'EOL', 'colmns_sum', 'c_1', 'c_2', 'c_3', 'c_4','c_5', 'c_6', 'c-7', 'c_8', 'c_9', 'c_10', 'c_11', 'c_12', 'c_13']
+df.columns = c_name
+
+df = df.sort_values(by=['dir_path','unix_time'],ascending = [True, True]).reset_index(drop=True)
 
 
+dt_now = datetime.now()
+now = dt_now.strftime('%Y_%m_%d %H_%M_%S')
+df_excel_witer(df,TOP_DIR, f'METADATA{now}')
+
+#△△△△△△△△△△△△△△△△△△△△△△△△△△METADATAファイル作成
+#valueの要素数をカウントするc_1~c_13
+print(df['c_1'].value_counts(ascending=True))
+dic= df.iloc[:,15:].value_counts().to_dict()
+print(dic)
+df.iloc[:,15:].unique()
+df.iloc[:,15:]
+
+
+
+
+
+with open('data.csv', 'w') as file:
+writer = csv.writer(file, lineterminator='\n')
+writer.writerow(main)
+
+
+
+for i in range(開始行数):
+
+    y.readline()
+
+for i in range(読み出し行数):
+
+    lines1 = y.readline()
+
+    data.append(float(lines1))
+
+y.close()
+			s = bytes.decode("utf-8", "backslashreplace")
+		print(s)
+
+ext, zf, info = a,b,c
 print(zf.open(info).read())
 f = zf.extract(info)
 df = pd.read_excel(zf.extract(info))
+hdf_l = df.head().to_numpy().tolist()
+tdf_l = df.tail().to_numpy().tolist()
 
 fd = b.extract(c).read()
 b.extract(c).read()
@@ -352,13 +420,24 @@ for ext, zf, info in new_list:
 		print('yyyyyy')
 		print(csv_l)
 
+#csv実験
+sniffでdialectの型を判別
+with open('eggs.csv', newline='') as csvfile:
+	dialect = csv.Sniffer().sniff(csvfile.read(1024))
+	print(dialect) #<class 'csv.Sniffer.sniff.<locals>.dialect'>
+	csvfile.seek(0)
+	reader = csv.reader(csvfile, dialect)
+	print(type(reader)) #<class '_csv.reader'>
+	print(reader.dialect)
+	for row in reader:
+		print(row)
 
 
 
-
-
-
-
+読んだ行数
+csvreader.line_num
+名前？
+csvreader.fieldnames
 
 
 
@@ -597,3 +676,71 @@ for f in z.infolist():
 
 
 
+#CSV出力実験
+with open('eggs.csv', 'w', newline='') as csvfile:
+    spamwriter = csv.writer(csvfile, delimiter=' ',
+                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    spamwriter.writerow(['Spam'] * 5 + ['Baked Beans'])
+    spamwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
+
+Spam Spam Spam Spam Spam |Baked Beans|
+Spam |Lovely Spam| |Wonderful Spam|
+
+with open('eggs.csv', newline='') as csvfile:
+	pamreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+	for row in pamreader:
+		print(', '.join(row))
+
+with open('eggs.csv', newline='') as csvfile:
+	
+	pamreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+	for row in pamreader:
+		print(', '.join(row))
+
+Spam, Spam, Spam, Spam, Spam, Baked Beans
+Spam, Lovely Spam, Wonderful Spam
+############
+ class csv.Sniffer
+
+    Sniffer クラスは CSV ファイルの書式を推理するために用いられるクラスです。
+
+    Sniffer クラスではメソッドを二つ提供しています:
+
+    sniff(sample, delimiters=None)
+
+        与えられた sample を解析し、発見されたパラメータを反映した Dialect サブクラスを返します。オプションの delimiters パラメータを与えた場合、有効なデリミタ文字を含んでいるはずの文字列として解釈されます。
+Sniffer の利用例:
+
+with open('202101-divvy-tripdata.csv', newline='') as csvfile:
+	print(type(csvfile)) #<class '_io.TextIOWrapper'>
+	dialect = csv.Sniffer().sniff(csvfile.readline())
+	print(csv.list_dialects())
+	csvfile.seek(0)
+	reader = csv.reader(csvfile, dialect)
+	for row in reader:
+		print(row)
+    # ... process CSV file contents here ...
+
+csv モジュールでは以下の定数を定義しています:
+
+csv.QUOTE_ALL
+
+    writer オブジェクトに対し、全てのフィールドをクオートするように指示します。
+
+csv.QUOTE_MINIMAL
+
+    writer オブジェクトに対し、 delimiter 、 quotechar または lineterminator に含まれる任意の文字のような特別な文字を含むフィールドだけをクオートするように指示します。
+
+csv.QUOTE_NONNUMERIC
+
+    writer オブジェクトに対し、全ての非数値フィールドをクオートするように指示します。
+
+    reader に対しては、クオートされていない全てのフィールドを float 型に変換するよう指示します。
+
+csv.QUOTE_NONE
+
+    writer オブジェクトに対し、フィールドを決してクオートしないように指示します。現在の delimiter が出力データ中に現れた場合、現在設定されている escapechar 文字が前に付けられます。 escapechar がセットされていない場合、エスケープが必要な文字に遭遇した writer は Error を送出します。
+
+    reader に対しては、クオート文字の特別扱いをしないように指示します。
+
+csv モジュールでは以下の例外を定義しています:
