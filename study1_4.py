@@ -364,16 +364,194 @@ now = dt_now.strftime('%Y_%m_%d %H_%M_%S')
 df_excel_witer(df,TOP_DIR, f'METADATA{now}')
 
 #△△△△△△△△△△△△△△△△△△△△△△△△△△METADATAファイル作成
-#valueの要素数をカウントするc_1~c_13
+///////////////  station nename  ///////
+#station全18カラムへ
+#"" > '' , ' ' > '_' , 'A' > 'a'
+def trimming(str):
+	s = str.strip('"')
+	s = s.strip()
+	s = s.replace(' ', '_')
+	s = s.lower()
+	return s
+
+////////////    trip nename   ////////
+	  //  station nename  //
+#trip全18カラムへ
+def rename_trip_col(v):
+	v = trimming(v)
+	#c_1 ride_id
+	if v == 'trip_id' or v == '01_-_rental_details_rental_id':
+		return 'ride_id'
+	#c_2 'rideable_type'
+	#c_3 start at
+	if v == 'starttime' or v == 'start_time' or v == '01_-_rental_details_local_start_time' :
+		return 'started_at'
+	#c_4
+	if v == 'end_time' or v == 'stoptime' or v == '01_-_rental_details_local_end_time' :
+		return 'ended_at'
+	#c_5 start name
+	if v == 'from_station_name' or v == '03_-_rental_start_station_name':
+		return 'start_station_name'
+	#c_6 start id
+	if v == 'from_station_id' or v == '03_-_rental_start_station_id':
+		return 'start_station_id'
+	#c_7 end name
+	if v == 'to_station_name' or v == '02_-_rental_end_station_name':
+		return 'end_station_name'
+	#c_8 end id
+	if v == 'to_station_id' or v == '02_-_rental_end_station_id':
+		return 'end_station_id'
+	#c_9 #'start_lat'
+	#c_10 #'start_lng'
+	#c_11 #'end_lat'
+	#c_12 #'end_lng'
+	#c_13 'member_casual'
+	#old_4 'bikeid'
+	if v == "bikeid" or v == '01_-_rental_details_bike_id':
+		return 'bikeid'
+	#old_5 'tripduration'
+	if v == "tripduration" or v == '01_-_rental_details_duration_in_seconds_uncapped':
+		return 'tripduration'
+	#old_10 'usertype'
+	if v == 'usertype' or v == 'user_type':
+		return 'usertype'
+	#old_11 'gender'
+	if v == 'gender' or v == 'member_gender':
+		return 'gender'
+	#old_12 'birthyear'
+	if v ==  '05_-_member_details_member_birthday_year' or v == 'birthday' or v == 'birthyear' :
+		return 'birthyear'
+	else:
+		return  v
+////////////////////////////////
+#DF[[a,b,c],[a,a,c],[a,c,'']] > ('a', 4), ('c', 2), ('b', 1), ('', 1)
+def count_df_v(DF):
+	values = [ i for column_name, item in DF.iloc[:,15:].iteritems() for i in item.values.tolist() if i != '' ]
+	c = collections.Counter(values)
+	print(f'{name}の要素 : {c.most_common()}')
+	return c.most_common()
+
+#df[df['name']].iloc[:,15:] > [[('a', 4), ('c', 2), ('b', 1), ('', 1)], [('d', 4), ('e', 2), ('f', 1),('g', 2), ('h', 1)]]
+dict_l = []
+for name in ['station', 'trip']:
+	df_n = df[df['dir_path'].str.contains(name)]
+	dict_l.append(count_df_v(df_n))
+	print('--------------')
+	
+
+#df[df['name']].iloc[:,15:] > [{'a','c','b',''}, {'d','e','f','g','h}]
+df_station = df[df['dir_path'].str.contains('station')]
+df_trip = df[df['dir_path'].str.contains('trip')]
+set_station = { i for column_name, item in df_station.iloc[:,15:].iteritems() for i in item.values.tolist()}
+set_trip = { i for column_name, item in df_trip.iloc[:,15:].iteritems() for i in item.values.tolist()}
+set_l = [ set_station, set_trip]
+
+
+#set to list [{'a','c','b',''}, {'d','e','f','g','h}] > [['a','c','b'], ['d','e','f','g','h]]
+v_l_l = [[ v if v != '' else '' for v in set] for set in set_l]
+
+#"" > '' , ' ' > '_' , 'A' > 'a'  
+trim_set_l = [list({trimming(str) for str in v_l if str != ''}) for v_l in v_l_l ]
+
+#[(trim_set_l[0], dict_l[0]), (trim_set_l[1], dict_l[1])]
+#[(['a','c','b'], [('a', 4), ('c', 2), ('b', 1), ('', 1)]), (['d','e','f','g','h], [('d', 4), ('e', 2), ('f', 1),('g', 2), ('h', 1)])]
+rename_l = list(zip(trim_set_l, dict_l))
+print(rename_l[0])
+print(rename_l[1])
+
+"""
+trim_set_l[0]
+['landmark', 'id', 'longitude', 'name', 'latitude', 'city', 'dpcapacity', 'online_date', 'datecreated']
+
+dict_l[0]
+[('id', 8), ('name', 8), ('latitude', 8), ('longitude', 8), ('dpcapacity', 8), ('online_date', 4), ('landmark', 2), ('online date', 2), ('"id"', 1), ('"name"', 1), ('"city"', 1), ('city', 1), ('"latitude"', 1), ('"longitude"', 1), ('dateCreated', 1), ('"dpcapacity"', 1), ('"online_date"', 1)]
+
+trim_set_l[1]
+['tripduration', 'usertype', '05_-_member_details_member_birthday_year', 'to_station_id', 'start_lng', 'start_station_id', 'start_station_name', 'end_lng', '01_-_rental_details_local_end_time', '02_-_rental_end_station_id', 'start_lat', '02_-_rental_end_station_name', 'rideable_type', 'ended_at', 'end_station_id', 'member_casual', 'stoptime', 'gender', 'start_time', 'birthday', 'from_station_name', '01_-_rental_details_duration_in_seconds_uncapped', '03_-_rental_start_station_id', '01_-_rental_details_rental_id', '01_-_rental_details_local_start_time', 'trip_id', '01_-_rental_details_bike_id', 'end_station_name', 'ride_id', 'bikeid', '03_-_rental_start_station_name', 'from_station_id', 'starttime', 'started_at', 'end_time', 'end_lat', 'to_station_name', 'member_gender', 'birthyear', 'user_type']
+
+dict_l[1]
+[('ride_id', 25), ('rideable_type', 25), ('started_at', 25), ('ended_at', 25), ('start_station_name', 25), ('start_station_id', 25), ('end_station_name', 25), ('end_station_id', 25), ('start_lat', 25), ('start_lng', 25), ('end_lat', 25), ('end_lng', 25), ('member_casual', 25), ('trip_id', 22), ('bikeid', 22), ('tripduration', 22), ('from_station_id', 22), ('from_station_name', 22), ('to_station_id', 22), ('to_station_name', 22), ('usertype', 22), ('gender', 22), ('birthyear', 21), ('starttime', 15), ('stoptime', 15), ('start_time', 7), ('end_time', 7), ('"trip_id"', 5), ('"bikeid"', 5), ('"tripduration"', 5), ('"from_station_id"', 5), ('"from_station_name"', 5), ('"to_station_id"', 5), ('"to_station_name"', 5), ('"usertype"', 5), ('"gender"', 5), ('"birthyear"', 5), ('"start_time"', 3), ('"end_time"', 3), ('01 - Rental Details Rental ID', 2), ('"starttime"', 2), ('01 - Rental Details Local Start Time', 2), ('"stoptime"', 2), ('01 - Rental Details Local End Time', 2), ('01 - Rental Details Bike ID', 2), ('01 - Rental Details Duration In Seconds Uncapped', 2), ('03 - Rental Start Station ID', 2), ('03 - Rental Start Station Name', 2), ('02 - Rental End Station ID', 2), ('02 - Rental End Station Name', 2), ('User Type', 2), ('Member Gender', 2), ('05 - Member Details Member Birthday Year', 2), ('birthday', 1)]
+"""
+--------------------------------------
+#station_col_rename = {'landmark', 'id', 'longitude', 'name', 'latitude', 'city', 'dpcapacity', 'online_date', 'datecreated'}
+x ={}
+station_col_rename = set(x)
+for name, n in dict_l[0]:
+	station_col_rename.add(trimming(name))
+
+print(f'stationカラム{len(station_col_rename)}列に集約')
+#set
+#station_col_rename後で使う
+
+----------------------------------------
+#trip_col_rename = {'started_at', 'end_station_name', 'rideable_type', 'ride_id', 'ended_at', 'start_lng', 'end_station_id', 'end_lat', 'member_casual', 'bikeid', 'start_station_id', 'usertype', 'gender', 'start_station_name', 'tripduration', 'birthyear', 'end_lng', 'start_lat'}
+
+x ={}
+trip_col_rename = set(x)
+print(type(trip_col_rename))
+for name, n in dict_l[1]:
+	trim = trimming(name)
+	trip_col_rename.add(rename_trip_col(trim))
+
+print(f'tripカラム{len(trip_col_rename)}列に集約')
+#set
+#trip_col_rename後で使う
+---------------------------------------
+
+print(f'set_stationの要素の種類は{len(set_station)}個')
+print(f'set_tripの要素の種類は{len(set_trip)}個')
+set_stationの要素の種類は18個  > 6個
+set_tripの要素の種類は55個 > 13個
+
+#空欄削除しながらsetにして重複削除
+st_l =[trimming(str) for str in list(set_station) if str != '']
+print(set(st_l))
+st_l = list(set(st_l))
+#クォートの指定は"だけではダメで'"'クォートで囲むこと
+
+
+rename_trip_col(s)
+
+s = '01 - Rental Details Rental ID'
+def rename_trip_col(v):
+	#c_1 ride_id
+	if v == 'trip_id' or v == "trip_id" or v == '01 - Rental Details Rental ID':
+		return 'ride_id'
+
+
+set_all = {item for item in set_l}
+print(len(set_all))
+print(set_all)
+完成したら
+frozenset型
+
+
+
+
+
 print(df['c_1'].value_counts(ascending=True))
 dic= df.iloc[:,15:].value_counts().to_dict()
 print(dic)
 df.iloc[:,15:].unique()
 df.iloc[:,15:]
 
+    pandas.DataFrameをそのままforループに適用
+    1列ずつ取り出す
+        DataFrame.iteritems()メソッド
+    1行ずつ取り出す
+        DataFrame.iterrows()メソッド
+        DataFrame.itertuples()メソッド
+    特定の列の値を順に取り出す
+    ループ処理で値を更新する
+    処理速度
 
-
-
+for i in range(1,14):
+	col = ['c_f'{i}'']
+	testdic = df['c_1'].value_counts().to_dict()
+	exec(f"testdic = df['c_{i}'].value_counts().to_dict()")
+	exce(f"dic{i} = df['c_{i}'].value_counts().to_dict()")
+exec(f'df{i} = pd.read_excel(zf.extract(info), sheet_name=i)')
+i = 1
 
 with open('data.csv', 'w') as file:
 writer = csv.writer(file, lineterminator='\n')
